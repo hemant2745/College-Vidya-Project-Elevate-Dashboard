@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Vidya - Project Elevate Dashboard</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        tesla: {
+                            dark: '#0A0C10',
+                            card: '#12161F',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            red: '#E82127',
+                            redGlow: 'rgba(232, 33, 39, 0.3)',
+                            silver: '#C0C0C0',
+                            gold: '#FFD700',
+                            platinum: '#00E5FF',
+                            neonGreen: '#00FF66',
+                            neonBlue: '#00E5FF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- html2pdf.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- SheetJS (XLSX) CDN for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0A0C10;
+            color: #E2E8F0;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(18, 22, 31, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-panel-glow {
+            position: relative;
+        }
+        .glass-panel-glow::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, rgba(232, 33, 39, 0.25), transparent, rgba(0, 229, 255, 0.15));
+            border-radius: inherit;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #FFF;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: #E82127;
+            box-shadow: 0 0 15px rgba(232, 33, 39, 0.25);
+            outline: none;
+        }
+
+        .input-error {
+            border-color: #EF4444 !important;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important;
+            background: rgba(239, 68, 68, 0.05) !important;
+        }
+
+        .watermark-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-content: space-around;
+            opacity: 0.03;
+            user-select: none;
+        }
+        .watermark-text {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #FFFFFF;
+            transform: rotate(-30deg);
+            white-space: nowrap;
+            margin: 70px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0A0C10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1F2937;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E82127;
+        }
+
+        .month-locked {
+            opacity: 0.4;
+            filter: grayscale(80%);
+            pointer-events: none;
+            position: relative;
+        }
+        .month-locked::after {
+            content: '🔒 LOCKED';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: rgba(10, 12, 16, 0.65);
+            backdrop-filter: blur(2px);
+            border-radius: inherit;
+            color: #9CA3AF;
+        }
+
+        @keyframes floatTrophy {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(4deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-trophy {
+            animation: floatTrophy 2.8s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.3); }
+            50% { box-shadow: 0 0 35px rgba(0, 229, 255, 0.6); }
+        }
+        .pulse-platinum {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-200 antialiased relative selection:bg-red-600 selection:text-white">
+
+    <!-- Diagonal Background Watermark -->
+    <div class="watermark-container">
+        <div class="watermark-text">Project Elevate</div>
+        <div class="watermark-text">College Vidya</div>
+        <div class="watermark-text">Project Elevate</div>
+        <div class="watermark-text">College Vidya</div>
+        <div class="watermark-text">Project Elevate</div>
+        <div class="watermark-text">College Vidya</div>
+    </div>
+
+    <!-- Celebration Overlay -->
+    <div id="celebrationOverlay" class="fixed inset-0 z-50 pointer-events-none hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity duration-300">
+        <div class="glass-panel border-cyan-400/40 p-8 sm:p-10 rounded-3xl text-center max-w-lg shadow-2xl shadow-cyan-500/30 transform pointer-events-auto pulse-platinum relative">
+            <div class="text-6xl sm:text-7xl mb-4 animate-trophy inline-block">💎</div>
+            <h2 class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-cyan-400 tracking-wider mb-2 uppercase">
+                Platinum Achieved!
+            </h2>
+            <div class="text-xs uppercase tracking-widest text-cyan-300 font-bold mb-4">Outstanding Performance!</div>
+            <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                Congratulations! You have crossed the <strong>120%</strong> net performance benchmark and achieved the highest Project Elevate performance tier.
+            </p>
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="closeCelebration()" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition tracking-wide text-xs uppercase">
+                    Continue Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="pdfContent" class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+        <!-- Top Header Navigation Bar -->
+        <header class="glass-panel glass-panel-glow rounded-2xl p-4 sm:p-6 transition-all border-l-4 border-l-red-600">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div class="flex items-center space-x-4">
+                    <img src="logo.png" alt="College Vidya" class="h-10 sm:h-12 w-auto object-contain fallback-logo" onerror="this.src='https://placehold.co/180x50/12161F/FFFFFF?text=College+Vidya'">
+                    <div class="h-8 w-[1px] bg-slate-700 hidden sm:block"></div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-black text-white tracking-wide uppercase flex items-center gap-2">
+                            Project Elevate <span class="text-xs px-2 py-0.5 rounded-full bg-red-600/20 border border-red-500/30 text-red-400 font-semibold tracking-normal">Calculator</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Cumulative Performance &amp; Cancellation Evaluation Portal</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 text-xs">
+                    <div class="glass-panel px-3.5 py-2 rounded-xl flex items-center space-x-2 border-slate-700/50">
+                        <i data-lucide="calendar" class="w-4 h-4 text-red-500"></i>
+                        <div>
+                            <span class="text-slate-400 block text-[10px]">CURRENT DATE</span>
+                            <span id="displayCurrentDate" class="font-semibold text-slate-200">--</span>
+                        </div>
+                    </div>
+                    <div class="glass-panel px-3.5 py-2 rounded-xl flex items-center space-x-2 border-slate-700/50">
+                        <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>
+                        <div>
+                            <span class="text-slate-400 block text-[10px]">ACTIVE MONTH</span>
+                            <span id="displayCurrentMonth" class="font-semibold text-cyan-300">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile & Setup -->
+            <div class="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Counselor Name *</label>
+                    <input type="text" id="counsellorName" placeholder="Enter counselor name" class="w-full glass-input px-3 py-2 rounded-xl text-sm font-medium focus:ring-1 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Employee ID *</label>
+                    <input type="text" id="employeeId" placeholder="Enter employee ID" class="w-full glass-input px-3 py-2 rounded-xl text-sm font-medium focus:ring-1 focus:ring-red-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Category *</label>
+                    <select id="counsellorCategory" class="w-full glass-input px-3 py-2 rounded-xl text-sm font-medium focus:ring-1 focus:ring-red-500 bg-slate-900 cursor-pointer" onchange="handleCategoryOrJoiningChange()">
+                        <option value="CDA">CDA</option>
+                        <option value="SCDA">SCDA</option>
+                        <option value="PCA">PCA</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Joining Month *</label>
+                    <select id="joiningMonth" class="w-full glass-input px-3 py-2 rounded-xl text-sm font-medium focus:ring-1 focus:ring-red-500 bg-slate-900 cursor-pointer" onchange="handleCategoryOrJoiningChange()">
+                        <option value="April">April</option>
+                        <option value="May">May</option>
+                        <option value="June">June</option>
+                        <option value="July">July</option>
+                        <option value="August">August</option>
+                        <option value="September">September</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 text-red-400">April Target (Manual) *</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">₹</span>
+                        <input type="text" id="inputAprilTarget" placeholder="Enter April target" class="w-full glass-input pl-7 pr-3 py-2 rounded-xl text-sm font-medium text-red-300 focus:ring-1 focus:ring-red-500" oninput="handleFinancialInput(this, 'AprilTarget')">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Smart Info Banner -->
+        <section class="flex items-center justify-between glass-panel rounded-2xl p-4 gap-4 border-l-4 border-l-cyan-500">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-cyan-500/10 rounded-xl border border-cyan-500/20 text-cyan-400">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Interactive Performance &amp; Cancellation Calculator</h3>
+                    <p class="text-xs text-slate-400">Enter Achieved Revenue and Cancellation details. The system deducts total cancelled revenue from achieved revenue to predict your final tier (Silver, Gold, or Platinum).</p>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span>Calculator Ready</span>
+            </div>
+        </section>
+
+        <!-- Monthly Data Entry Cards Grid -->
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-red-500"></i>
+                    <span>Monthly Performance &amp; Cancellation Data</span>
+                </h3>
+                <span class="text-xs text-slate-400">Cycle: April – September</span>
+            </div>
+
+            <div id="monthlyCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically generated via renderMonthlyCards() -->
+            </div>
+        </section>
+
+        <!-- Action Center -->
+        <section class="glass-panel p-6 rounded-2xl space-y-4 border border-slate-700/60 text-center" data-html2canvas-ignore="true">
+            <div id="validationAlert" class="hidden p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm font-semibold flex items-center justify-center gap-2 animate-pulse">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i>
+                <span id="validationAlertText">Please complete all required fields before checking your performance.</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="checkPerformance()" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold rounded-2xl shadow-xl shadow-red-600/30 hover:scale-[1.02] active:scale-[0.98] transition flex items-center justify-center gap-3 text-base tracking-wider uppercase">
+                    <i data-lucide="award" class="w-5 h-5"></i>
+                    <span>Check Performance</span>
+                </button>
+                <button onclick="clearAllData()" class="w-full sm:w-auto px-6 py-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white font-bold rounded-2xl transition flex items-center justify-center gap-2 text-sm tracking-wide">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4 text-slate-400"></i>
+                    <span>Clear All Data</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- DEDICATED PERFORMANCE RESULT SECTION -->
+        <section id="performanceResultSection" class="hidden space-y-8 transition-all duration-500">
+            
+            <div class="glass-panel glass-panel-glow rounded-2xl p-6 relative overflow-hidden border border-red-500/30">
+                <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div id="tierMessageBanner" class="mb-6 p-4 rounded-xl border text-center font-bold text-sm"></div>
+
+                <div class="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+                    <div class="space-y-2 text-center lg:text-left">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs text-slate-300">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span>OFFICIAL PERFORMANCE &amp; CATEGORY PREDICTION</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Overall Project Elevate Performance</h2>
+                        <p class="text-xs text-slate-400 max-w-xl">
+                            Evaluated cumulatively after subtracting cancellation amounts from Joining Month (<span id="lblJoiningMonth" class="text-slate-200 font-semibold">--</span>) through (<span id="lblCurrentMonth" class="text-slate-200 font-semibold">--</span>).
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center gap-6">
+                        <div class="relative w-28 h-28 flex items-center justify-center">
+                            <canvas id="overallGaugeChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                <span id="overallPercentageText" class="text-lg font-black text-white">0%</span>
+                                <span class="text-[9px] uppercase tracking-wider text-slate-400">NET %</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center sm:text-left space-y-1">
+                            <span class="text-xs uppercase text-slate-400 font-semibold tracking-wider">PREDICTED CATEGORY</span>
+                            <div id="overallSlabBadge" class="px-5 py-2.5 rounded-xl font-extrabold text-lg tracking-wider text-center shadow-lg bg-slate-800 text-slate-400 border border-slate-700">
+                                --
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Breakdown Grid -->
+                <div class="mt-6 pt-6 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="glass-panel p-4 rounded-xl border-slate-800">
+                        <span class="text-xs text-slate-400 block font-medium">OVERALL TARGET</span>
+                        <span id="overallTotalTarget" class="text-lg sm:text-xl font-extrabold text-white">₹0</span>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-slate-800">
+                        <span class="text-xs text-slate-400 block font-medium">GROSS ACHIEVED</span>
+                        <span id="overallGrossAchieved" class="text-lg sm:text-xl font-extrabold text-slate-300">₹0</span>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-slate-800">
+                        <span class="text-xs text-slate-400 block font-medium">CANCELLATIONS</span>
+                        <span id="overallTotalCancelled" class="text-lg sm:text-xl font-extrabold text-red-400">- ₹0</span>
+                        <span id="overallCancelledCountSub" class="text-[10px] text-slate-400 block mt-0.5">(0 admissions)</span>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-slate-800">
+                        <span class="text-xs text-slate-400 block font-medium">NET ACHIEVED</span>
+                        <span id="overallTotalAchieved" class="text-lg sm:text-xl font-extrabold text-emerald-400">₹0</span>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-slate-800">
+                        <span class="text-xs text-slate-400 block font-medium">NET ACHIEVEMENT %</span>
+                        <span id="overallTotalPct" class="text-lg sm:text-xl font-extrabold text-cyan-400">0.00%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Month Deficit Analysis -->
+            <section class="glass-panel rounded-2xl p-6 border-l-4 border-l-cyan-500">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-cyan-500/10 rounded-xl text-cyan-400 border border-cyan-500/20">
+                            <i data-lucide="calculator" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">Current Month Target Predictor (<span id="calcMonthName">--</span>)</h3>
+                            <p class="text-xs text-slate-400">Additional net revenue needed in <span id="calcMonthSub">--</span> alone to reach the next tier</p>
+                        </div>
+                    </div>
+                    <div id="calcCurrentOverallStatus" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 self-start sm:self-auto">
+                        Status: --
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Silver -->
+                    <div class="glass-panel p-5 rounded-xl border border-slate-400/20 bg-slate-900/40 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-sm text-slate-300 flex items-center gap-1.5">🥈 Silver (90% Benchmark)</span>
+                                <span id="badgeSilverReq" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">REQUIRED</span>
+                            </div>
+                            <div id="valSilverReq" class="text-2xl font-black text-slate-200 my-1">₹0</div>
+                        </div>
+                        <p id="descSilverReq" class="text-[11px] text-slate-400 mt-2">Additional net sales needed to secure Silver.</p>
+                    </div>
+
+                    <!-- Gold -->
+                    <div class="glass-panel p-5 rounded-xl border border-amber-500/20 bg-slate-900/40 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-sm text-amber-300 flex items-center gap-1.5">🥇 Gold (100% Benchmark)</span>
+                                <span id="badgeGoldReq" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">REQUIRED</span>
+                            </div>
+                            <div id="valGoldReq" class="text-2xl font-black text-amber-400 my-1">₹0</div>
+                        </div>
+                        <p id="descGoldReq" class="text-[11px] text-slate-400 mt-2">Additional net sales needed to secure Gold.</p>
+                    </div>
+
+                    <!-- Platinum -->
+                    <div class="glass-panel p-5 rounded-xl border border-cyan-400/20 bg-slate-900/40 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-sm text-cyan-300 flex items-center gap-1.5">💎 Platinum (120% Benchmark)</span>
+                                <span id="badgePlatinumReq" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">REQUIRED</span>
+                            </div>
+                            <div id="valPlatinumReq" class="text-2xl font-black text-cyan-300 my-1">₹0</div>
+                        </div>
+                        <p id="descPlatinumReq" class="text-[11px] text-slate-400 mt-2">Additional net sales needed to secure Platinum.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytical Visualizations -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 text-red-500"></i>
+                            <span>Target vs Gross vs Net Achieved Revenue</span>
+                        </h4>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="barChartTargetVsAchieved"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i>
+                            <span>Net Achievement Trend (%)</span>
+                        </h4>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="lineChartAchievementPct"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Export Hub -->
+            <section class="glass-panel p-6 rounded-2xl border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-4" data-html2canvas-ignore="true">
+                <div>
+                    <h4 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="download" class="w-5 h-5 text-cyan-400"></i>
+                        <span>Export Performance Report</span>
+                    </h4>
+                    <p class="text-xs text-slate-400">Download formatted reports with full cancellation details in Excel or PDF format.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <button onclick="downloadExcel()" class="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition text-xs shadow-lg shadow-emerald-900/30">
+                        <i data-lucide="sheet" class="w-4 h-4"></i>
+                        <span>Download Excel</span>
+                    </button>
+                    <button onclick="downloadPDF()" class="flex-1 sm:flex-none px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition text-xs shadow-lg shadow-red-900/30">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>Download PDF</span>
+                    </button>
+                </div>
+            </section>
+        </section>
+
+        <!-- Footer -->
+        <footer class="pt-8 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <span>College Vidya Internal Performance Portal</span> &bull; 
+                <span>Project Elevate 2026</span>
+            </div>
+            <div class="font-semibold text-slate-400">
+                Designed &amp; Developed by <span class="text-red-500">Hemant Jha</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Application Scripting Logic -->
+    <script>
+        const ELEVATE_TARGETS = {
+            CDA:  { May: 550000, June: 650000, July: 700000, August: 580000, September: 550000 },
+            SCDA: { May: 650000, June: 750000, July: 800000, August: 750000, September: 700000 },
+            PCA:  { May: 750000, June: 800000, July: 950000, August: 800000, September: 800000 }
+        };
+
+        const MONTH_ORDER = ["April", "May", "June", "July", "August", "September"];
+        const MONTH_INDICES = { April: 3, May: 4, June: 5, July: 6, August: 7, September: 8 };
+
+        let currentSystemMonthName = "August";
+        let currentSystemMonthIndex = 7;
+        let lastCalculatedSlab = null;
+
+        let chartBarInstance = null;
+        let chartLineInstance = null;
+        let chartGaugeInstance = null;
+
+        let appState = {
+            counsellorName: "",
+            employeeId: "",
+            category: "CDA",
+            joiningMonth: "April",
+            aprilTarget: 0,
+            monthsData: {
+                April:     { target: 0, achieved: 0, pct: 0, cancelledCount: 0, cancelledAmountPerAdmiss: 0, cancelledTotal: 0, netAchieved: 0, entered: false },
+                May:       { target: 550000, achieved: 0, pct: 0, cancelledCount: 0, cancelledAmountPerAdmiss: 0, cancelledTotal: 0, netAchieved: 0, entered: false },
+                June:      { target: 650000, achieved: 0, pct: 0, cancelledCount: 0, cancelledAmountPerAdmiss: 0, cancelledTotal: 0, netAchieved: 0, entered: false },
+                July:      { target: 700000, achieved: 0, pct: 0, cancelledCount: 0, cancelledAmountPerAdmiss: 0, cancelledTotal: 0, netAchieved: 0, entered: false },
+                August:    { target: 580000, achieved: 0, pct: 0, cancelledCount: 0, cancelledAmountPerAdmiss: 0, cancelledTotal: 0, netAchieved: 0, entered: false },
+                September: { target: 550000, achieved: 0, pct: 0, cancelledCount: 0, cancelledAmountPerAdmiss: 0, cancelledTotal: 0, netAchieved: 0, entered: false }
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initializeSystemDateAndMonth();
+            initializeBlankState();
+            initializeLucideIcons();
+        });
+
+        function initializeLucideIcons() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        function initializeBlankState() {
+            appState.counsellorName = "";
+            appState.employeeId = "";
+            appState.category = "CDA";
+            appState.joiningMonth = "April";
+            appState.aprilTarget = 0;
+
+            MONTH_ORDER.forEach(m => {
+                const baseTarget = m === "April" ? 0 : ELEVATE_TARGETS[appState.category][m];
+                appState.monthsData[m] = {
+                    target: baseTarget,
+                    achieved: 0,
+                    pct: 0,
+                    cancelledCount: 0,
+                    cancelledAmountPerAdmiss: 0,
+                    cancelledTotal: 0,
+                    netAchieved: 0,
+                    entered: false
+                };
+            });
+
+            document.getElementById("counsellorName").value = "";
+            document.getElementById("employeeId").value = "";
+            document.getElementById("counsellorCategory").value = "CDA";
+            document.getElementById("joiningMonth").value = "April";
+            document.getElementById("inputAprilTarget").value = "";
+
+            renderMonthlyCards();
+            hidePerformanceResult();
+        }
+
+        function hidePerformanceResult() {
+            const resultSection = document.getElementById("performanceResultSection");
+            if (resultSection) {
+                resultSection.classList.add("hidden");
+            }
+            lastCalculatedSlab = null;
+        }
+
+        function initializeSystemDateAndMonth() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const currentMonthReal = monthNames[today.getMonth()];
+            const year = today.getFullYear();
+
+            document.getElementById("displayCurrentDate").textContent = `${day} ${currentMonthReal} ${year}`;
+
+            const mIndex = today.getMonth();
+            if (mIndex < 3) {
+                currentSystemMonthName = "April";
+                currentSystemMonthIndex = 3;
+            } else if (mIndex > 8) {
+                currentSystemMonthName = "September";
+                currentSystemMonthIndex = 8;
+            } else {
+                currentSystemMonthName = currentMonthReal;
+                currentSystemMonthIndex = mIndex;
+            }
+
+            document.getElementById("displayCurrentMonth").textContent = currentSystemMonthName;
+            document.getElementById("lblCurrentMonth").textContent = currentSystemMonthName;
+            document.getElementById("calcMonthName").textContent = currentSystemMonthName;
+            document.getElementById("calcMonthSub").textContent = currentSystemMonthName;
+        }
+
+        function formatIndianCurrency(val) {
+            if (isNaN(val) || val === null || val === undefined || val === 0) return "0";
+            const num = Math.round(val);
+            return num.toLocaleString('en-IN');
+        }
+
+        function renderMonthlyCards() {
+            const container = document.getElementById("monthlyCardsGrid");
+            container.innerHTML = "";
+
+            MONTH_ORDER.forEach((mName) => {
+                const mIdx = MONTH_INDICES[mName];
+                const isLocked = mIdx > currentSystemMonthIndex;
+
+                const cardHtml = `
+                    <div id="card_month_${mName}" class="glass-panel p-5 rounded-2xl flex flex-col justify-between transition-all duration-300 ${isLocked ? 'month-locked' : 'hover:border-slate-600'}">
+                        <div>
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full ${isLocked ? 'bg-slate-600' : 'bg-red-500'}"></span>
+                                    <h4 class="font-bold text-base text-white">${mName}</h4>
+                                </div>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                                    ${mName === 'April' ? 'Manual Target' : 'Auto Target'}
+                                </span>
+                            </div>
+
+                            <div class="space-y-3.5">
+                                <!-- 1. Monthly Target -->
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">1. Monthly Target</label>
+                                    <div class="glass-input px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 bg-slate-900/50 cursor-not-allowed">
+                                        ₹<span id="display_target_${mName}">${formatIndianCurrency(appState.monthsData[mName].target)}</span>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Achieved Revenue -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">2. Gross Achieved Revenue</label>
+                                        <span class="text-[9px] text-emerald-400 font-semibold uppercase">Editable</span>
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-semibold">₹</span>
+                                        <input type="text" id="input_achieved_${mName}" 
+                                            class="w-full glass-input pl-7 pr-3 py-2 rounded-xl text-sm font-bold text-emerald-400 focus:ring-1 focus:ring-emerald-500"
+                                            placeholder="Enter achieved revenue"
+                                            oninput="handleFinancialInput(this, '${mName}', 'revenue')">
+                                    </div>
+                                </div>
+
+                                <!-- 3. Achievement Percentage -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">3. Gross Achievement %</label>
+                                        <span class="text-[9px] text-cyan-400 font-semibold uppercase">Editable</span>
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-semibold">%</span>
+                                        <input type="text" id="input_pct_${mName}" 
+                                            class="w-full glass-input pl-3 pr-7 py-2 rounded-xl text-sm font-bold text-cyan-400 focus:ring-1 focus:ring-cyan-500"
+                                            placeholder="Enter achievement %"
+                                            oninput="handleFinancialInput(this, '${mName}', 'pct')">
+                                    </div>
+                                </div>
+
+                                <!-- CANCELLATION OF ADMISSION SECTION -->
+                                <div class="p-3.5 rounded-xl bg-red-950/20 border border-red-500/20 space-y-3">
+                                    <div class="flex items-center justify-between border-b border-red-500/20 pb-1.5">
+                                        <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+                                            <i data-lucide="user-x" class="w-3 h-3"></i> Cancellation Section
+                                        </span>
+                                    </div>
+
+                                    <!-- 4. Number of Cancellations -->
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">4. Admissions Cancelled (Count)</label>
+                                        <input type="number" id="input_cancelled_count_${mName}" min="0" step="1"
+                                            class="w-full glass-input px-3 py-1.5 rounded-xl text-sm font-bold text-red-400 focus:ring-1 focus:ring-red-500"
+                                            placeholder="e.g. 5"
+                                            oninput="handleFinancialInput(this, '${mName}', 'cancelled_count')">
+                                    </div>
+
+                                    <!-- 5. Amount per Admission -->
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">5. Amount per Admission</label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-semibold">₹</span>
+                                            <input type="text" id="input_cancelled_amount_${mName}" 
+                                                class="w-full glass-input pl-7 pr-3 py-1.5 rounded-xl text-sm font-bold text-amber-400 focus:ring-1 focus:ring-amber-500"
+                                                placeholder="e.g. 50,000"
+                                                oninput="handleFinancialInput(this, '${mName}', 'cancelled_amount')">
+                                        </div>
+                                    </div>
+
+                                    <!-- Total Cancellation Deducted -->
+                                    <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-800">
+                                        <span class="text-slate-400 font-semibold text-[10px] uppercase">Cancelled Revenue:</span>
+                                        <span class="font-extrabold text-red-400">- ₹<span id="display_cancelled_total_${mName}">0</span></span>
+                                    </div>
+                                </div>
+
+                                <!-- 6. Net Achieved Revenue -->
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">6. Net Achieved Revenue</label>
+                                    <div class="px-3 py-2 rounded-xl text-sm font-bold bg-emerald-950/40 border border-emerald-500/30 text-emerald-300">
+                                        ₹<span id="display_net_achieved_${mName}">0</span>
+                                    </div>
+                                </div>
+
+                                <!-- 7. Net Remaining Revenue -->
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">7. Net Remaining Revenue</label>
+                                    <div id="box_remaining_${mName}" class="px-3 py-2 rounded-xl text-sm font-bold border transition-all bg-slate-900/60 border-slate-800 text-slate-400">
+                                        <span id="display_remaining_${mName}">₹0 Remaining</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            initializeLucideIcons();
+        }
+
+        function handleFinancialInput(element, monthKey, inputType) {
+            clearValidationHighlight(element);
+            const cursorPosition = element.selectionStart;
+            const originalLength = element.value.length;
+
+            const rawVal = element.value.replace(/[^0-9.]/g, '');
+            const numericVal = parseFloat(rawVal) || 0;
+
+            if (monthKey === 'AprilTarget') {
+                appState.aprilTarget = numericVal;
+                appState.monthsData.April.target = numericVal;
+                element.value = rawVal === "" ? "" : formatIndianCurrency(numericVal);
+                const aprTargetDisplay = document.getElementById("display_target_April");
+                if (aprTargetDisplay) aprTargetDisplay.textContent = formatIndianCurrency(numericVal);
+                updateSingleMonthRemaining("April");
+            } else {
+                const target = appState.monthsData[monthKey].target;
+                appState.monthsData[monthKey].entered = element.value.trim() !== "";
+
+                if (inputType === 'revenue') {
+                    appState.monthsData[monthKey].achieved = numericVal;
+                    appState.monthsData[monthKey].pct = target > 0 ? (numericVal / target) * 100 : 0;
+                    element.value = rawVal === "" ? "" : formatIndianCurrency(numericVal);
+                    
+                    const inputPct = document.getElementById(`input_pct_${monthKey}`);
+                    if (inputPct && document.activeElement !== inputPct) {
+                        inputPct.value = rawVal === "" ? "" : (Number.isInteger(appState.monthsData[monthKey].pct) ? appState.monthsData[monthKey].pct.toString() : appState.monthsData[monthKey].pct.toFixed(2));
+                    }
+                } else if (inputType === 'pct') {
+                    let pctVal = numericVal;
+                    if (pctVal > 1000) pctVal = 1000;
+                    appState.monthsData[monthKey].pct = pctVal;
+                    appState.monthsData[monthKey].achieved = (target * pctVal) / 100;
+                    element.value = rawVal;
+
+                    const inputAchieved = document.getElementById(`input_achieved_${monthKey}`);
+                    if (inputAchieved && document.activeElement !== inputAchieved) {
+                        inputAchieved.value = rawVal === "" ? "" : formatIndianCurrency(appState.monthsData[monthKey].achieved);
+                    }
+                } else if (inputType === 'cancelled_count') {
+                    appState.monthsData[monthKey].cancelledCount = parseInt(rawVal, 10) || 0;
+                } else if (inputType === 'cancelled_amount') {
+                    appState.monthsData[monthKey].cancelledAmountPerAdmiss = numericVal;
+                    element.value = rawVal === "" ? "" : formatIndianCurrency(numericVal);
+                }
+
+                // Calculate Net Cancellation and Net Achieved
+                const mData = appState.monthsData[monthKey];
+                mData.cancelledTotal = mData.cancelledCount * mData.cancelledAmountPerAdmiss;
+                mData.netAchieved = Math.max(0, mData.achieved - mData.cancelledTotal);
+
+                const displayCancelTotal = document.getElementById(`display_cancelled_total_${monthKey}`);
+                if (displayCancelTotal) displayCancelTotal.textContent = formatIndianCurrency(mData.cancelledTotal);
+
+                const displayNetAchieved = document.getElementById(`display_net_achieved_${monthKey}`);
+                if (displayNetAchieved) displayNetAchieved.textContent = formatIndianCurrency(mData.netAchieved);
+
+                updateSingleMonthRemaining(monthKey);
+            }
+
+            const newLength = element.value.length;
+            const newCursorPos = Math.max(0, cursorPosition + (newLength - originalLength));
+            try {
+                element.setSelectionRange(newCursorPos, newCursorPos);
+            } catch (e) {}
+        }
+
+        function updateSingleMonthRemaining(mName) {
+            const data = appState.monthsData[mName];
+            const boxRemaining = document.getElementById(`box_remaining_${mName}`);
+            const displayRemaining = document.getElementById(`display_remaining_${mName}`);
+
+            if (boxRemaining && displayRemaining) {
+                const netAchieved = data.netAchieved || 0;
+                const remaining = data.target - netAchieved;
+
+                if (netAchieved === 0 && data.target === 0) {
+                    boxRemaining.className = "px-3 py-2 rounded-xl text-sm font-bold bg-slate-900/60 border-slate-800 text-slate-400";
+                    displayRemaining.textContent = "₹0 Remaining";
+                } else if (remaining <= 0) {
+                    const aboveVal = Math.abs(remaining);
+                    boxRemaining.className = "px-3 py-2 rounded-xl text-sm font-bold bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+                    displayRemaining.textContent = `₹${formatIndianCurrency(aboveVal)} Above Target`;
+                } else {
+                    boxRemaining.className = "px-3 py-2 rounded-xl text-sm font-bold bg-amber-500/10 border-amber-500/30 text-amber-400";
+                    displayRemaining.textContent = `₹${formatIndianCurrency(remaining)} Remaining`;
+                }
+            }
+        }
+
+        function handleCategoryOrJoiningChange() {
+            appState.category = document.getElementById("counsellorCategory").value;
+            appState.joiningMonth = document.getElementById("joiningMonth").value;
+            
+            const catTargets = ELEVATE_TARGETS[appState.category];
+            ["May", "June", "July", "August", "September"].forEach(m => {
+                appState.monthsData[m].target = catTargets[m];
+                const displayTgt = document.getElementById(`display_target_${m}`);
+                if (displayTgt) displayTgt.textContent = formatIndianCurrency(catTargets[m]);
+                
+                if (appState.monthsData[m].pct > 0) {
+                    appState.monthsData[m].achieved = (catTargets[m] * appState.monthsData[m].pct) / 100;
+                    const inputAchieved = document.getElementById(`input_achieved_${m}`);
+                    if (inputAchieved) inputAchieved.value = formatIndianCurrency(appState.monthsData[m].achieved);
+                }
+                
+                // Recalculate net achieved
+                appState.monthsData[m].netAchieved = Math.max(0, appState.monthsData[m].achieved - appState.monthsData[m].cancelledTotal);
+                updateSingleMonthRemaining(m);
+            });
+        }
+
+        function determineSlab(pct) {
+            if (pct >= 120.0) return { name: "💎 PLATINUM", style: "bg-cyan-500/20 text-cyan-300 border-cyan-400/40", raw: "Platinum" };
+            if (pct >= 100.0) return { name: "🥇 GOLD", style: "bg-amber-500/20 text-amber-300 border-amber-400/40", raw: "Gold" };
+            if (pct >= 90.0) return { name: "🥈 SILVER", style: "bg-slate-300/20 text-slate-200 border-slate-300/40", raw: "Silver" };
+            return { name: "❌ NOT ELIGIBLE", style: "bg-red-500/10 text-red-400 border-red-500/30", raw: "Not Eligible" };
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const missingFields = [];
+
+            const nameInput = document.getElementById("counsellorName");
+            const empIdInput = document.getElementById("employeeId");
+            const aprilTgtInput = document.getElementById("inputAprilTarget");
+
+            if (!nameInput.value.trim()) {
+                highlightError(nameInput);
+                missingFields.push("Counselor Name");
+                isValid = false;
+            }
+
+            if (!empIdInput.value.trim()) {
+                highlightError(empIdInput);
+                missingFields.push("Employee ID");
+                isValid = false;
+            }
+
+            const joiningIdx = MONTH_INDICES[document.getElementById("joiningMonth").value];
+            if (joiningIdx === 3 && (!aprilTgtInput.value.trim() || appState.aprilTarget <= 0)) {
+                highlightError(aprilTgtInput);
+                missingFields.push("April Target");
+                isValid = false;
+            }
+
+            const currentIdx = MONTH_INDICES[currentSystemMonthName];
+            let hasAnyMonthlyData = false;
+
+            MONTH_ORDER.forEach(mName => {
+                const mIdx = MONTH_INDICES[mName];
+                if (mIdx >= joiningIdx && mIdx <= currentIdx) {
+                    const inputAchieved = document.getElementById(`input_achieved_${mName}`);
+                    if (inputAchieved && inputAchieved.value.trim() !== "") {
+                        hasAnyMonthlyData = true;
+                    }
+                }
+            });
+
+            if (!hasAnyMonthlyData) {
+                isValid = false;
+                missingFields.push(`Monthly performance data for active period`);
+            }
+
+            const alertEl = document.getElementById("validationAlert");
+            const alertText = document.getElementById("validationAlertText");
+
+            if (!isValid) {
+                alertEl.classList.remove("hidden");
+                alertText.textContent = `Please complete all required fields (${missingFields.join(', ')}) before checking your performance.`;
+                alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                alertEl.classList.add("hidden");
+            }
+
+            return isValid;
+        }
+
+        function highlightError(element) {
+            if (element) {
+                element.classList.add("input-error");
+            }
+        }
+
+        function clearValidationHighlight(element) {
+            if (element) {
+                element.classList.remove("input-error");
+            }
+            const alertEl = document.getElementById("validationAlert");
+            if (alertEl) alertEl.classList.add("hidden");
+        }
+
+        function checkPerformance() {
+            if (!validateForm()) {
+                hidePerformanceResult();
+                return;
+            }
+
+            appState.counsellorName = document.getElementById("counsellorName").value.trim();
+            appState.employeeId = document.getElementById("employeeId").value.trim();
+            appState.category = document.getElementById("counsellorCategory").value;
+            appState.joiningMonth = document.getElementById("joiningMonth").value;
+
+            document.getElementById("lblJoiningMonth").textContent = appState.joiningMonth;
+            document.getElementById("lblCurrentMonth").textContent = currentSystemMonthName;
+
+            const joiningIdx = MONTH_INDICES[appState.joiningMonth];
+            const currentIdx = MONTH_INDICES[currentSystemMonthName];
+
+            let overallTarget = 0;
+            let overallGrossAchieved = 0;
+            let overallCancelledCount = 0;
+            let overallCancelledAmount = 0;
+
+            MONTH_ORDER.forEach(mName => {
+                const mIdx = MONTH_INDICES[mName];
+                if (mIdx >= joiningIdx && mIdx <= currentIdx) {
+                    overallTarget += appState.monthsData[mName].target;
+                    overallGrossAchieved += appState.monthsData[mName].achieved;
+                    overallCancelledCount += (appState.monthsData[mName].cancelledCount || 0);
+                    overallCancelledAmount += (appState.monthsData[mName].cancelledTotal || 0);
+                }
+            });
+
+            const overallNetAchieved = Math.max(0, overallGrossAchieved - overallCancelledAmount);
+            const overallPct = overallTarget > 0 ? (overallNetAchieved / overallTarget) * 100 : 0;
+            const overallSlab = determineSlab(overallPct);
+            lastCalculatedSlab = overallSlab.raw;
+
+            showPerformanceResult(overallTarget, overallGrossAchieved, overallCancelledCount, overallCancelledAmount, overallNetAchieved, overallPct, overallSlab, joiningIdx, currentIdx);
+
+            if (overallSlab.raw === "Platinum") {
+                playPlatinumSound();
+                triggerPlatinumCelebration();
+            }
+        }
+
+        function showPerformanceResult(overallTarget, overallGrossAchieved, overallCancelledCount, overallCancelledAmount, overallNetAchieved, overallPct, overallSlab, joiningIdx, currentIdx) {
+            const resultSection = document.getElementById("performanceResultSection");
+            resultSection.classList.remove("hidden");
+
+            document.getElementById("overallTotalTarget").textContent = `₹${formatIndianCurrency(overallTarget)}`;
+            document.getElementById("overallGrossAchieved").textContent = `₹${formatIndianCurrency(overallGrossAchieved)}`;
+            document.getElementById("overallTotalCancelled").textContent = `- ₹${formatIndianCurrency(overallCancelledAmount)}`;
+            document.getElementById("overallCancelledCountSub").textContent = `(${overallCancelledCount} admission${overallCancelledCount === 1 ? '' : 's'})`;
+            document.getElementById("overallTotalAchieved").textContent = `₹${formatIndianCurrency(overallNetAchieved)}`;
+            document.getElementById("overallTotalPct").textContent = `${overallPct.toFixed(2)}%`;
+
+            const slabBadge = document.getElementById("overallSlabBadge");
+            slabBadge.className = `px-5 py-2.5 rounded-xl font-extrabold text-lg tracking-wider text-center shadow-lg border ${overallSlab.style}`;
+            slabBadge.textContent = overallSlab.name;
+            document.getElementById("overallPercentageText").textContent = `${Math.round(overallPct)}%`;
+
+            const tierBanner = document.getElementById("tierMessageBanner");
+            if (overallSlab.raw === "Platinum") {
+                tierBanner.className = "mb-6 p-4 rounded-xl border border-cyan-400/40 bg-cyan-500/10 text-cyan-200 text-center font-bold text-sm";
+                tierBanner.innerHTML = "💎 <strong>PLATINUM ACHIEVED!</strong> Outstanding Performance! You have crossed the 120% net benchmark.";
+            } else if (overallSlab.raw === "Gold") {
+                tierBanner.className = "mb-6 p-4 rounded-xl border border-amber-400/40 bg-amber-500/10 text-amber-200 text-center font-bold text-sm";
+                tierBanner.innerHTML = "🥇 <strong>GOLD ACHIEVED!</strong> Excellent performance! You've crossed the 100% net benchmark. One more push toward Platinum!";
+            } else if (overallSlab.raw === "Silver") {
+                tierBanner.className = "mb-6 p-4 rounded-xl border border-slate-400/40 bg-slate-500/10 text-slate-200 text-center font-bold text-sm";
+                tierBanner.innerHTML = "🥈 <strong>SILVER ACHIEVED!</strong> Great work! You've successfully crossed the 90% net performance benchmark.";
+            } else {
+                tierBanner.className = "mb-6 p-4 rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 text-center font-bold text-sm";
+                tierBanner.innerHTML = "❌ <strong>BENCHMARK NOT REACHED</strong> Minimum 90% cumulative net achievement is required for Silver status.";
+            }
+
+            let priorMonthsNetAchieved = 0;
+            MONTH_ORDER.forEach(mName => {
+                const mIdx = MONTH_INDICES[mName];
+                if (mIdx >= joiningIdx && mIdx < currentIdx) {
+                    priorMonthsNetAchieved += (appState.monthsData[mName].netAchieved || 0);
+                }
+            });
+
+            const reqSilver = overallTarget * 0.90;
+            const reqGold = overallTarget * 1.00;
+            const reqPlat = overallTarget * 1.20;
+
+            const currNetAchieved = appState.monthsData[currentSystemMonthName].netAchieved || 0;
+            const addlSilver = Math.max(0, reqSilver - (priorMonthsNetAchieved + currNetAchieved));
+            const addlGold = Math.max(0, reqGold - (priorMonthsNetAchieved + currNetAchieved));
+            const addlPlat = Math.max(0, reqPlat - (priorMonthsNetAchieved + currNetAchieved));
+
+            document.getElementById("calcCurrentOverallStatus").className = `px-3 py-1.5 text-xs font-bold rounded-lg border ${overallSlab.style}`;
+            document.getElementById("calcCurrentOverallStatus").textContent = `Predicted Status: ${overallSlab.name}`;
+
+            // Silver Card
+            const badgeSilver = document.getElementById("badgeSilverReq");
+            const valSilver = document.getElementById("valSilverReq");
+            const descSilver = document.getElementById("descSilverReq");
+            if (overallPct >= 90.0) {
+                badgeSilver.textContent = "ACHIEVED";
+                badgeSilver.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
+                valSilver.textContent = "₹0";
+                descSilver.textContent = "You have secured Silver status or higher.";
+            } else {
+                badgeSilver.textContent = "REQUIRED";
+                badgeSilver.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400";
+                valSilver.textContent = `₹${formatIndianCurrency(addlSilver)}`;
+                descSilver.textContent = `Need ₹${formatIndianCurrency(addlSilver)} more net sales in ${currentSystemMonthName} to reach Silver.`;
+            }
+
+            // Gold Card
+            const badgeGold = document.getElementById("badgeGoldReq");
+            const valGold = document.getElementById("valGoldReq");
+            const descGold = document.getElementById("descGoldReq");
+            if (overallPct >= 100.0) {
+                badgeGold.textContent = "ACHIEVED";
+                badgeGold.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400";
+                valGold.textContent = "₹0";
+                descGold.textContent = "You have secured Gold status or higher.";
+            } else {
+                badgeGold.textContent = "REQUIRED";
+                badgeGold.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400";
+                valGold.textContent = `₹${formatIndianCurrency(addlGold)}`;
+                descGold.textContent = `Need ₹${formatIndianCurrency(addlGold)} more net sales in ${currentSystemMonthName} to reach Gold.`;
+            }
+
+            // Platinum Card
+            const badgePlatinum = document.getElementById("badgePlatinumReq");
+            const valPlatinum = document.getElementById("valPlatinumReq");
+            const descPlatinum = document.getElementById("descPlatinumReq");
+            if (overallPct >= 120.0) {
+                badgePlatinum.textContent = "ACHIEVED";
+                badgePlatinum.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300";
+                valPlatinum.textContent = "₹0";
+                descPlatinum.textContent = "Platinum benchmark achieved!";
+            } else {
+                badgePlatinum.textContent = "REQUIRED";
+                badgePlatinum.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400";
+                valPlatinum.textContent = `₹${formatIndianCurrency(addlPlat)}`;
+                descPlatinum.textContent = `Need ₹${formatIndianCurrency(addlPlat)} more net sales in ${currentSystemMonthName} to reach Platinum.`;
+            }
+
+            renderResultCharts(overallPct);
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        let audioCtx = null;
+        function playPlatinumSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                audioCtx = new AudioContext();
+
+                const now = audioCtx.currentTime;
+                const fireworkTimes = [0, 0.18, 0.35, 0.55, 0.8, 1.1];
+                fireworkTimes.forEach((delay) => {
+                    const t = now + delay;
+                    const bufferSize = audioCtx.sampleRate * 0.25;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+
+                    const whiteNoise = audioCtx.createBufferSource();
+                    whiteNoise.buffer = buffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = "bandpass";
+                    filter.frequency.setValueAtTime(1200 + Math.random() * 800, t);
+                    filter.Q.setValueAtTime(3, t);
+
+                    const noiseGain = audioCtx.createGain();
+                    noiseGain.gain.setValueAtTime(0.4, t);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+
+                    whiteNoise.connect(filter);
+                    filter.connect(noiseGain);
+                    noiseGain.connect(audioCtx.destination);
+
+                    whiteNoise.start(t);
+                    whiteNoise.stop(t + 0.25);
+
+                    const osc = audioCtx.createOscillator();
+                    const oscGain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150 + Math.random() * 50, t);
+                    osc.frequency.exponentialRampToValueAtTime(30, t + 0.3);
+
+                    oscGain.gain.setValueAtTime(0.6, t);
+                    oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+                    osc.connect(oscGain);
+                    oscGain.connect(audioCtx.destination);
+
+                    osc.start(t);
+                    osc.stop(t + 0.3);
+                });
+            } catch (e) {
+                console.warn("Audio playback non-fatal error", e);
+            }
+        }
+
+        function triggerPlatinumCelebration() {
+            const overlay = document.getElementById("celebrationOverlay");
+            overlay.classList.remove("hidden");
+
+            if (typeof confetti === 'function') {
+                const count = 200;
+                const defaults = { origin: { y: 0.7 } };
+
+                function fire(particleRatio, opts) {
+                    confetti(Object.assign({}, defaults, opts, {
+                        particleCount: Math.floor(count * particleRatio)
+                    }));
+                }
+
+                confetti({
+                    particleCount: 100,
+                    angle: 60,
+                    spread: 70,
+                    origin: { x: 0, y: 0.65 },
+                    colors: ['#00E5FF', '#FFD700', '#FFFFFF', '#E82127']
+                });
+                confetti({
+                    particleCount: 100,
+                    angle: 120,
+                    spread: 70,
+                    origin: { x: 1, y: 0.65 },
+                    colors: ['#00E5FF', '#FFD700', '#FFFFFF', '#E82127']
+                });
+
+                setTimeout(() => {
+                    fire(0.25, { spread: 26, startVelocity: 55, colors: ['#00E5FF', '#FFFFFF'] });
+                    fire(0.2, { spread: 60, colors: ['#FFD700', '#00E5FF'] });
+                    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+                    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+                }, 300);
+            }
+        }
+
+        function closeCelebration() {
+            document.getElementById("celebrationOverlay").classList.add("hidden");
+            if (audioCtx && audioCtx.state !== 'closed') {
+                try { audioCtx.close(); } catch(e){}
+            }
+        }
+
+        function clearAllData() {
+            if (!confirm("Are you sure you want to clear all entered data and reset the calculator?")) {
+                return;
+            }
+            closeCelebration();
+            initializeBlankState();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderResultCharts(overallPct) {
+            Chart.defaults.color = '#94A3B8';
+            Chart.defaults.font.family = 'Inter';
+
+            const ctxBar = document.getElementById('barChartTargetVsAchieved').getContext('2d');
+            if (chartBarInstance) chartBarInstance.destroy();
+            chartBarInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: MONTH_ORDER,
+                    datasets: [
+                        {
+                            label: 'Target (₹)',
+                            data: MONTH_ORDER.map(m => appState.monthsData[m].target),
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Gross Achieved (₹)',
+                            data: MONTH_ORDER.map(m => appState.monthsData[m].achieved),
+                            backgroundColor: 'rgba(232, 33, 39, 0.5)',
+                            borderColor: '#E82127',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Net Achieved (₹)',
+                            data: MONTH_ORDER.map(m => appState.monthsData[m].netAchieved),
+                            backgroundColor: 'rgba(0, 229, 255, 0.85)',
+                            borderColor: '#00E5FF',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { boxWidth: 12 } } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const ctxLine = document.getElementById('lineChartAchievementPct').getContext('2d');
+            if (chartLineInstance) chartLineInstance.destroy();
+            chartLineInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: MONTH_ORDER,
+                    datasets: [{
+                        label: 'Net Achievement (%)',
+                        data: MONTH_ORDER.map(m => {
+                            const t = appState.monthsData[m].target;
+                            const n = appState.monthsData[m].netAchieved;
+                            return t > 0 ? (n / t) * 100 : 0;
+                        }),
+                        borderColor: '#00E5FF',
+                        backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#00E5FF',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, min: 0 },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const ctxGauge = document.getElementById('overallGaugeChart').getContext('2d');
+            if (chartGaugeInstance) chartGaugeInstance.destroy();
+            const cappedPct = Math.min(overallPct, 100);
+            const gaugeColor = overallPct >= 120 ? '#00E5FF' : overallPct >= 100 ? '#FFD700' : overallPct >= 90 ? '#C0C0C0' : '#E82127';
+
+            chartGaugeInstance = new Chart(ctxGauge, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [cappedPct, Math.max(0, 100 - cappedPct)],
+                        backgroundColor: [gaugeColor, 'rgba(255, 255, 255, 0.08)'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '82%',
+                    plugins: { tooltip: { enabled: false } }
+                }
+            });
+        }
+
+        function downloadExcel() {
+            if (!window.XLSX) {
+                alert("Excel library is loading, please try again in a moment.");
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            const counselorInfo = [
+                ["COLLEGE VIDYA - PROJECT ELEVATE PERFORMANCE & CANCELLATION REPORT"],
+                [],
+                ["Counselor Information", ""],
+                ["Counselor Name", appState.counsellorName || "N/A"],
+                ["Employee ID", appState.employeeId || "N/A"],
+                ["Category", appState.category],
+                ["Joining Month", appState.joiningMonth],
+                ["Active Evaluation Month", currentSystemMonthName],
+                [],
+                ["Monthly Performance Breakdown", "", "", "", "", "", "", "", ""],
+                ["Month", "Target (INR)", "Gross Achieved (INR)", "Cancelled Count", "Amount / Seat (INR)", "Total Deducted (INR)", "Net Achieved (INR)", "Net Achievement %", "Status"]
+            ];
+
+            const joiningIdx = MONTH_INDICES[appState.joiningMonth];
+            const currentIdx = MONTH_INDICES[currentSystemMonthName];
+            let cumulativeTarget = 0;
+            let cumulativeGross = 0;
+            let cumulativeCancelled = 0;
+
+            MONTH_ORDER.forEach(m => {
+                const data = appState.monthsData[m];
+                const netAchieved = data.netAchieved || 0;
+                const rem = data.target - netAchieved;
+                const mIdx = MONTH_INDICES[m];
+                const isApplicable = mIdx >= joiningIdx && mIdx <= currentIdx;
+
+                if (isApplicable) {
+                    cumulativeTarget += data.target;
+                    cumulativeGross += data.achieved;
+                    cumulativeCancelled += (data.cancelledTotal || 0);
+                }
+
+                const netPct = data.target > 0 ? (netAchieved / data.target) * 100 : 0;
+
+                counselorInfo.push([
+                    m,
+                    data.target,
+                    data.achieved,
+                    data.cancelledCount || 0,
+                    data.cancelledAmountPerAdmiss || 0,
+                    data.cancelledTotal || 0,
+                    netAchieved,
+                    `${netPct.toFixed(2)}%`,
+                    !isApplicable ? "Out of Scope / Future" : (netPct >= 100 ? "Achieved" : "Pending")
+                ]);
+            });
+
+            const cumulativeNet = Math.max(0, cumulativeGross - cumulativeCancelled);
+            const overallPct = cumulativeTarget > 0 ? (cumulativeNet / cumulativeTarget) * 100 : 0;
+            const overallSlab = determineSlab(overallPct);
+
+            counselorInfo.push([]);
+            counselorInfo.push(["Overall Cumulative Summary", ""]);
+            counselorInfo.push(["Total Target (INR)", cumulativeTarget]);
+            counselorInfo.push(["Total Gross Achieved (INR)", cumulativeGross]);
+            counselorInfo.push(["Total Cancellation Deducted (INR)", cumulativeCancelled]);
+            counselorInfo.push(["Total Net Achieved (INR)", cumulativeNet]);
+            counselorInfo.push(["Net Achievement %", `${overallPct.toFixed(2)}%`]);
+            counselorInfo.push(["Final Predicted Category", overallSlab.raw.toUpperCase()]);
+
+            const ws = XLSX.utils.aoa_to_sheet(counselorInfo);
+
+            ws['!cols'] = [
+                { wch: 15 },
+                { wch: 16 },
+                { wch: 20 },
+                { wch: 16 },
+                { wch: 20 },
+                { wch: 22 },
+                { wch: 18 },
+                { wch: 18 },
+                { wch: 20 }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Performance Report");
+
+            const cleanName = (appState.counsellorName || "Counsellor").trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const fileName = cleanName ? `Project_Elevate_${cleanName}_Report.xlsx` : `Project_Elevate_Report.xlsx`;
+
+            XLSX.writeFile(wb, fileName);
+        }
+
+        function downloadPDF() {
+            closeCelebration();
+            const element = document.getElementById('pdfContent');
+            const cleanName = (appState.counsellorName || "Counsellor").trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+            const fileName = cleanName ? `Project_Elevate_${cleanName}_Report.pdf` : `Project_Elevate_Report.pdf`;
+
+            const opt = {
+                margin:       [0.2, 0.2, 0.2, 0.2],
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0A0C10' },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            if (window.html2pdf) {
+                html2pdf().set(opt).from(element).save();
+            } else {
+                alert("PDF generation library is loading. Please try again in a few seconds.");
+            }
+        }
+    </script>
+</body>
+</html>
